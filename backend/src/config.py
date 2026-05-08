@@ -3,6 +3,10 @@ from enum import Enum
 from typing import Any, Optional
 
 from pydantic import BaseModel, Field
+from dotenv import load_dotenv
+
+# override=True 确保每次运行时强制用 .env 文件里的新值覆盖系统旧变量
+load_dotenv(override=True) 
 
 
 class SearchAPI(Enum):
@@ -87,6 +91,23 @@ class Configuration(BaseModel):
         description="Optional model identifier for custom OpenAI-compatible services",
     )
 
+    # Memory system configuration
+    enable_memory: bool = Field(
+        default=True,
+        title="Enable Memory System",
+        description="Whether to enable the vector memory system",
+    )
+    chroma_persist_directory: str = Field(
+        default="./data/chroma",
+        title="Chroma Persist Directory",
+        description="Directory for Chroma vector database persistence",
+    )
+    embedding_model: str = Field(
+        default="sentence-transformers/all-MiniLM-L6-v2",
+        title="Embedding Model",
+        description="Model for generating vector embeddings",
+    )
+
     @classmethod
     def from_env(cls, overrides: Optional[dict[str, Any]] = None) -> "Configuration":
         """Create a configuration object using environment variables and overrides."""
@@ -115,6 +136,9 @@ class Configuration(BaseModel):
             "search_api": os.getenv("SEARCH_API"),
             "enable_notes": os.getenv("ENABLE_NOTES"),
             "notes_workspace": os.getenv("NOTES_WORKSPACE"),
+            "enable_memory": os.getenv("ENABLE_MEMORY"),
+            "chroma_persist_directory": os.getenv("CHROMA_PERSIST_DIRECTORY"),
+            "embedding_model": os.getenv("EMBEDDING_MODEL"),
         }
 
         for key, value in env_aliases.items():

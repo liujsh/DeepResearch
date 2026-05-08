@@ -6,9 +6,34 @@
       <span></span>
     </div>
 
-    <!-- 初始状态：居中输入卡片 -->
-    <div v-if="!isExpanded" class="layout layout-centered">
-      <section class="panel panel-form panel-centered">
+    <!-- 初始状态：左右分栏(包含侧边栏历史) -->
+    <div v-if="!isExpanded" class="layout layout-history">
+      <!-- 左栏：最近历史列表 -->
+      <aside class="history-sidebar">
+        <div class="sidebar-header">
+          <h2>📚 历史研究</h2>
+          <button class="new-btn" @click="startNewResearch" title="开启新研究">
+            + 新建
+          </button>
+        </div>
+        <div class="history-list">
+          <p v-if="sessionsLoading" class="muted">加载中...</p>
+          <p v-else-if="!recentSessions.length" class="muted">尚未进行过研究，赶快开始吧！</p>
+          <ul v-else>
+            <li v-for="session in recentSessions" :key="session.id" 
+                class="history-item" @click="loadHistorySession(session.id)">
+              <div class="history-topic">{{ session.topic }}</div>
+              <div class="history-meta">
+                <span class="status" :class="session.status">{{ session.status === 'completed' ? '已完成' : '已中止' }}</span>
+                <span class="time">{{ new Date(session.created_at).toLocaleDateString() }}</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </aside>
+
+      <!-- 中间主栏：新建或展示表单 -->
+      <section class="panel panel-form panel-centered" style="flex: 1; border-radius: 0;">
         <header class="panel-head">
           <div class="logo">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -336,12 +361,64 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onBeforeUnmount, reactive, ref } from "vue";
+import { computed, onBeforeUnmount, reactive, ref, onMounted } from "vue";
+import { marked } from 'marked';
 
 import {
   runResearchStream,
-  type ResearchStreamEvent
+  type ResearchStreamEvent,
+  memoryApi,
+  type ResearchSession
 } from "./services/api";
+
+const recentSessions = ref<ResearchSession[]>([]);
+const sessionsLoading = ref(false);
+
+const loadSessionsList = async () => {
+  sessionsLoading.value = true;
+  try {
+    recentSessions.value = await memoryApi.getSessions(20, 0);
+  } catch (e) {
+    console.error('加载历史记录失败', e);
+  } finally {
+    sessionsLoading.value = false;
+  }
+};
+
+onMounted(() => {
+  loadSessionsList();
+});
+
+const loadHistorySession = async (sessionId: string) => {
+  try {
+    loading.value = true;
+    error.value = "";
+    const detail = await memoryApi.getSessionDetail(sessionId);
+    
+    form.topic = detail.session.topic;
+    reportMarkdown.value = "";
+    
+    if (detail.session.status === 'completed' || (detail.memories && detail.memories.length)) {
+      const reportMem = detail.memories?.find((m: any) => m.metadata?.content_type === 'report');
+      if (reportMem) {
+        reportMarkdown.value = reportMem.content;
+      } else {
+        const firstMem = detail.memories?.[0];
+        reportMarkdown.value = "_(提取报告片段...)_\n\n" + (detail.session.summary || (firstMem ? firstMem.content : "未能提取完整报告。"));
+      }
+    } else {
+        reportMarkdown.value = "此任务状态为：" + detail.session.status;
+    }
+    
+    todoTasks.value = [];
+    progressLogs.value = ["已加载历史归档: " + detail.session.topic];
+    isExpanded.value = true;
+  } catch (err: any) {
+    error.value = err.message || "无法加载历史详情";
+  } finally {
+    loading.value = false;
+  }
+};
 
 interface SourceItem {
   title: string;

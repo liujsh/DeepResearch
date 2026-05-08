@@ -124,8 +124,23 @@ class DeepResearchAgent:
 
     def run(self, topic: str) -> SummaryStateOutput:
         """Execute the research workflow and return the final report."""
+        from memory.routes import get_memory_manager
+        
+        manager = None
+        session = None
+        memory_context_str = ""
+        try:
+            manager = get_memory_manager()
+            session = manager.create_session(topic=topic)
+            related_memories = manager.get_related_memories(topic, limit=3)
+            # Create a markdown summary of related memories
+            if related_memories:
+                memory_context_str = "\n\n".join([m.content for m in related_memories])
+        except Exception as e:
+            logger.warning(f"Failed to access memory system: {e}")
+
         state = SummaryState(research_topic=topic)
-        state.todo_items = self.planner.plan_todo_list(state)
+        state.todo_items = self.planner.plan_todo_list(state, memory_context=memory_context_str)
         self._drain_tool_events(state)
 
         if not state.todo_items:
@@ -134,12 +149,45 @@ class DeepResearchAgent:
 
         for task in state.todo_items:
             self._execute_task(state, task, emit_stream=False)
+            if manager and session and task.summary:
+                try:
+                    manager.add_memory(
+                        session_id=session.id,
+                        session_topic=topic,
+                        content=task.summary,
+                        content_type="task_summary",
+                        task_id=str(task.id),
+                        task_title=task.title
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to save task memory: {e}")
 
         report = self.reporting.generate_report(state)
         self._drain_tool_events(state)
         state.structured_report = report
         state.running_summary = report
         self._persist_final_report(state, report)
+
+        if manager and session and report:
+            try:
+                clean_rpt = re.sub(r'<\|.*?\|>|\[TOOL_CALL.*?\]|functions\.TOOL_CALL[^\n]*|\{"action"[^\}]*\}', '', report)
+                clean_rpt = re.sub(r'我将首先[^\n]*?信息。?', '', clean_rpt).strip()
+                clean_rpt = ' '.join(clean_rpt.split())
+
+                manager.add_memory(
+                    session_id=session.id,
+                    session_topic=topic,
+                    content=clean_rpt[:2000], # maybe store a truncated version or full report
+                    content_type="report"
+                )
+                manager.update_session(
+                    session_id=session.id, 
+                    status="completed", 
+                    summary=clean_rpt[:200] + '...', 
+                    task_count=len(state.todo_items)
+                )
+            except Exception as e:
+                 logger.warning(f"Failed to save report memory: {e}")
 
         return SummaryStateOutput(
             running_summary=report,
@@ -149,11 +197,25 @@ class DeepResearchAgent:
 
     def run_stream(self, topic: str) -> Iterator[dict[str, Any]]:
         """Execute the workflow yielding incremental progress events."""
+        from memory.routes import get_memory_manager
+        
+        manager = None
+        session = None
+        memory_context_str = ""
+        try:
+            manager = get_memory_manager()
+            session = manager.create_session(topic=topic)
+            related_memories = manager.get_related_memories(topic, limit=3)
+            if related_memories:
+                memory_context_str = "\n\n".join([m.content for m in related_memories])
+        except Exception as e:
+            logger.warning(f"Failed to access memory system: {e}")
+
         state = SummaryState(research_topic=topic)
         logger.debug("Starting streaming research: topic=%s", topic)
-        yield {"type": "status", "message": "初始化研究流程"}
+        yield {"type": "status", "message": "初始化研究流程 (带记忆检测)"}
 
-        state.todo_items = self.planner.plan_todo_list(state)
+        state.todo_items = self.planner.plan_todo_list(state, memory_context=memory_context_str)
         for event in self._drain_tool_events(state, step=0):
             yield event
         if not state.todo_items:
@@ -274,6 +336,40 @@ class DeepResearchAgent:
         note_event = self._persist_final_report(state, report)
         if note_event:
             yield note_event
+
+        if manager and session:
+            try:
+                for t in state.todo_items:
+                    if t.summary:
+                        clean_summary = re.sub(r'<\|.*?\|>|\[TOOL_CALL.*?\]|functions\.TOOL_CALL[^\n]*|\{"action"[^\}]*\}', '', t.summary)
+                        clean_summary = re.sub(r'我将首先[^\n]*?信息。?', '', clean_summary).strip()
+                        clean_summary = ' '.join(clean_summary.split())
+                        manager.add_memory(
+                            session_id=session.id,
+                            session_topic=topic,
+                            content=clean_summary,
+                            content_type="task_summary",
+                            task_id=str(t.id),
+                            task_title=t.title
+                        )
+                if report:
+                    clean_rpt = re.sub(r'<\|.*?\|>|\[TOOL_CALL.*?\]|functions\.TOOL_CALL[^\n]*|\{"action"[^\}]*\}', '', report)
+                    clean_rpt = re.sub(r'我将首先[^\n]*?信息。?', '', clean_rpt).strip()
+                    clean_rpt = ' '.join(clean_rpt.split())
+                    manager.add_memory(
+                        session_id=session.id,
+                        session_topic=topic,
+                        content=clean_rpt[:2000],
+                        content_type="report"
+                    )
+                    manager.update_session(
+                        session_id=session.id, 
+                        status="completed", 
+                        summary=clean_rpt[:200] + '...', 
+                        task_count=len(state.todo_items)
+                    )
+            except Exception as e:
+                logger.warning(f"Failed to save stream report memory: {e}")
 
         yield {
             "type": "final_report",

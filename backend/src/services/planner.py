@@ -28,13 +28,17 @@ class PlanningService:
         self._agent = planner_agent
         self._config = config
 
-    def plan_todo_list(self, state: SummaryState) -> List[TodoItem]:
+    def plan_todo_list(self, state: SummaryState, memory_context: str = "") -> List[TodoItem]:
         """Ask the planner agent to break the topic into actionable tasks."""
+
+        context_prompt = ""
+        if memory_context:
+            context_prompt = f"\n【历史研究记忆参考】：\n{memory_context}\n请利用上述历史知识进行更有针对性的规划，避免完全重复造轮子。"
 
         prompt = todo_planner_instructions.format(
             current_date=get_current_date(),
             research_topic=state.research_topic,
-        )
+        ) + context_prompt
 
         response = self._agent.run(prompt)
         self._agent.clear_history()

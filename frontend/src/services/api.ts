@@ -11,6 +11,31 @@ export interface ResearchStreamEvent {
   [key: string]: unknown;
 }
 
+export interface ResearchSession {
+  id: string;
+  topic: string;
+  status: string;
+  created_at: string;
+  summary?: string;
+}
+
+export const memoryApi = {
+  // 获取历史会话列表
+  async getSessions(limit = 20, offset = 0): Promise<ResearchSession[]> {
+    const res = await fetch(`${baseURL}/memory/sessions?limit=${limit}&offset=${offset}`);
+    if (!res.ok) throw new Error('获取历史失败');
+    const data = await res.json();
+    return data.sessions;
+  },
+
+  // 获取单条历史详情
+  async getSessionDetail(sessionId: string) {
+    const res = await fetch(`${baseURL}/memory/sessions/${sessionId}`);
+    if (!res.ok) throw new Error('获取详情失败');
+    return await res.json();
+  }
+};
+
 export interface StreamOptions {
   signal?: AbortSignal;
 }

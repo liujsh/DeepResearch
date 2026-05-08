@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 
 from config import Configuration, SearchAPI
 from agent import DeepResearchAgent
+from memory.routes import router as memory_router
 
 # 添加控制台日志处理程序
 logger.add(
@@ -85,6 +86,9 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # 挂载记忆系统路由
+    app.include_router(memory_router, prefix="/memory", tags=["memory"])
 
     @app.on_event("startup")
     def log_startup_configuration() -> None:

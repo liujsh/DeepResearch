@@ -1,0 +1,102 @@
+{
+  "sess_9f3a0d54": {
+    "id": "sess_9f3a0d54",
+    "topic": "AI前端生态现状",
+    "created_at": "2026-04-26T16:27:16.307581Z",
+    "updated_at": "2026-04-26T16:29:58.607556Z",
+    "status": "completed",
+    "task_count": 4,
+    "memory_count": 5,
+    "summary": "我将首先读取所有任务笔记以获取完整信息，然后生成结构化研究报告。<|tool_calls_section_begin|><|tool_call_begin|>functions.TOOL_CALL:note:{\"action\": \"read\", \"note_id\": \"note_20260427_002803_38\"}<|tool_call_end|><|tool_call_begin|>func"
+  },
+  "sess_e5153ec1": {
+    "id": "sess_e5153ec1",
+    "topic": "agent中memory技术的发展",
+    "created_at": "2026-04-26T16:58:28.849804Z",
+    "updated_at": "2026-04-26T17:01:43.038670Z",
+    "status": "completed",
+    "task_count": 5,
+    "memory_count": 6,
+    "summary": "，然后生成结构化研究报告。..."
+  },
+  "sess_110f3465": {
+    "id": "sess_110f3465",
+    "topic": "agent中memory的发展",
+    "created_at": "2026-05-08T07:17:07.424426Z",
+    "updated_at": "2026-05-08T07:17:07.424426Z",
+    "status": "active",
+    "task_count": 0,
+    "memory_count": 0,
+    "summary": null
+  },
+  "sess_81e265d5": {
+    "id": "sess_81e265d5",
+    "topic": "agent中memory发展",
+    "created_at": "2026-05-08T07:24:05.328965Z",
+    "updated_at": "2026-05-08T07:24:05.328965Z",
+    "status": "active",
+    "task_count": 0,
+    "memory_count": 0,
+    "summary": null
+  },
+  "sess_3b1a796b": {
+    "id": "sess_3b1a796b",
+    "topic": "agent中memory发展",
+    "created_at": "2026-05-08T07:30:23.150338Z",
+    "updated_at": "2026-05-08T07:30:23.150338Z",
+    "status": "active",
+    "task_count": 0,
+    "memory_count": 0,
+    "summary": null
+  },
+  "sess_d0a6f478": {
+    "id": "sess_d0a6f478",
+    "topic": "agent中memory发展",
+    "created_at": "2026-05-08T07:34:03.586302Z",
+    "updated_at": "2026-05-08T07:36:51.459887Z",
+    "status": "completed",
+    "task_count": 5,
+    "memory_count": 6,
+    "summary": "# 研究报告：Agent中Memory发展 ## 1. **背景概览** AI Agent的记忆系统已成为决定其智能水平的核心组件。2026年，记忆架构从单一存储发展为多层次、多模态的复杂系统，涉及分层存储、混合检索、安全防护和离线处理等关键技术。随着多智能体协作和工具集成标准化（如MCP协议）的普及，记忆系统的设计直接影响Agent的可靠性、安全性和持续学习能力。 ## 2. **核心洞见** ..."
+  },
+  "sess_8b36e218": {
+    "id": "sess_8b36e218",
+    "topic": "agent中memory的发展",
+    "created_at": "2026-05-08T08:06:32.406296Z",
+    "updated_at": "2026-05-08T08:06:32.406296Z",
+    "status": "active",
+    "task_count": 0,
+    "memory_count": 0,
+    "summary": null
+  },
+  "sess_8a6c02d5": {
+    "id": "sess_8a6c02d5",
+    "topic": "agent中skills的发展",
+    "created_at": "2026-05-08T08:09:40.993440Z",
+    "updated_at": "2026-05-08T08:12:22.291791Z",
+    "status": "completed",
+    "task_count": 1,
+    "memory_count": 2,
+    "summary": "# 研究报告：Agent中Skills的发展 ## 1. 背景概览 Agent Skills已成为大模型落地的核心基础设施，其发展经历了从手工Prompt工程到标准化技能模块，再到原位自进化的技术跃迁。2026年行业已形成完整的技能开发生态，涉及工具调用、记忆管理、多Agent协作等关键能力，推动企业级AI应用的效率提升与成本优化。 ## 2. 核心洞见 1. **标准化架构革命**：渐进式披露架..."
+  },
+  "sess_32646ee3": {
+    "id": "sess_32646ee3",
+    "topic": "agent中mcp技术",
+    "created_at": "2026-05-08T08:59:40.787101Z",
+    "updated_at": "2026-05-08T08:59:40.787101Z",
+    "status": "active",
+    "task_count": 0,
+    "memory_count": 0,
+    "summary": null
+  },
+  "sess_3c705b52": {
+    "id": "sess_3c705b52",
+    "topic": "agent中rag技术",
+    "created_at": "2026-05-08T09:02:27.280875Z",
+    "updated_at": "2026-05-08T09:05:54.657537Z",
+    "status": "completed",
+    "task_count": 4,
+    "memory_count": 5,
+    "summary": "```markdown # 研究报告：Agent中RAG技术 ## 1. 背景概览 RAG（检索增强生成）技术已成为Agent系统的核心能力，通过结合信息检索与生成模型优势，解决大模型知识滞后与幻觉问题。2026年技术演进呈现三大趋势：图结构增强的关系推理、多模态协同检索、企业级知识治理自动化。 ## 2. 核心洞见 1. **混合架构成为工程标配**：70%头部企业采用\"向量库+图谱\"双引擎，跨..."
+  }
+}
