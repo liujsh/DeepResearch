@@ -1,12 +1,13 @@
 """Memory system API routes."""
 
+import logging
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query
 
-from config import Configuration
-from memory.manager import MemoryManager, create_memory_manager
-from memory.models import (
+from ..config import Configuration
+from .manager import MemoryManager, create_memory_manager
+from .models import (
     DeleteResponse,
     SearchResponse,
     SessionDetailResponse,
@@ -14,6 +15,8 @@ from memory.models import (
 )
 
 router = APIRouter()
+
+logger = logging.getLogger(__name__)
 
 _memory_manager: Optional[MemoryManager] = None
 
@@ -59,6 +62,7 @@ async def list_sessions(
         sessions, total = manager.list_sessions(status=status, limit=limit, offset=offset)
         return SessionListResponse(sessions=sessions, total=total, limit=limit, offset=offset)
     except Exception as e:
+        logger.exception("Failed to list sessions")
         raise HTTPException(status_code=500, detail=f"获取会话列表失败: {str(e)}")
 
 

@@ -12,9 +12,9 @@ from fastapi.responses import StreamingResponse
 from loguru import logger
 from pydantic import BaseModel, Field
 
-from config import Configuration, SearchAPI
-from agent import DeepResearchAgent
-from memory.routes import router as memory_router
+from .config import Configuration, SearchAPI
+from .agent import DeepResearchAgent
+from .memory.routes import router as memory_router
 
 # 添加控制台日志处理程序
 logger.add(

@@ -4,18 +4,19 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
 from uuid import uuid4
 
-from config import Configuration
-from memory.models import (
+from ..config import Configuration
+from .models import (
     MemoryMetadata,
     ResearchSession,
     SearchResult,
 )
-from memory.storage import ChromaStorage
+from .storage import ChromaStorage, DEFAULT_EMBEDDING_MODEL
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,7 @@ logger = logging.getLogger(__name__)
 class MemoryManager:
     """记忆管理器 - 提供记忆存储和检索功能"""
 
-    def __init__(self, config: Optional[Configuration] = None):
+    def __init__(self, config: Optional[Configuration] = None, storage_type: str = "chroma"):
         if config is None:
             config = Configuration.from_env()
 
@@ -31,15 +32,25 @@ class MemoryManager:
 
         chroma_dir = getattr(config, "chroma_persist_directory", "./data/chroma")
         embedding_model = getattr(
-            config, "embedding_model", "sentence-transformers/all-MiniLM-L6-v2"
+            config, "embedding_model", DEFAULT_EMBEDDING_MODEL
         )
 
-        self.storage = ChromaStorage(
-            persist_directory=chroma_dir,
-            embedding_model=embedding_model,
-        )
+        # 根据 storage_type 创建不同的存储实例
+        if storage_type == "qdrant":
+            from .storage import QdrantStorage
+            self.storage = QdrantStorage(
+                embedding_model=embedding_model,
+            )
+            # Qdrant 使用不同的目录
+            self.sessions_file = Path("./data/qdrant") / "sessions.json"
+        else:
+            from .storage import ChromaStorage
+            self.storage = ChromaStorage(
+                persist_directory=chroma_dir,
+                embedding_model=embedding_model,
+            )
+            self.sessions_file = Path(chroma_dir) / "sessions.json"
 
-        self.sessions_file = Path(chroma_dir) / "sessions.json"
         self._sessions = self._load_sessions()
 
     def _load_sessions(self) -> dict[str, ResearchSession]:
@@ -142,12 +153,14 @@ class MemoryManager:
         task_id: Optional[str] = None,
         task_title: Optional[str] = None,
         source: str = "agent",
+        metadata: Optional[dict] = None,
     ) -> str:
         """添加记忆记录"""
         memory_id = f"mem_{uuid4().hex[:8]}"
         now = datetime.utcnow().isoformat() + "Z"
 
-        metadata = {
+        metadata = metadata or {}
+        metadata.update({
             "session_id": session_id,
             "session_topic": session_topic,
             "content_type": content_type,
@@ -156,7 +169,7 @@ class MemoryManager:
             "created_at": now,
             "updated_at": now,
             "source": source,
-        }
+        })
 
         self.storage.add_memory(
             memory_id=memory_id,
@@ -201,6 +214,13 @@ class MemoryManager:
         return self.search(query=query, limit=limit)
 
 
-def create_memory_manager(config: Optional[Configuration] = None) -> MemoryManager:
-    """工厂函数：创建 MemoryManager 实例"""
-    return MemoryManager(config)
+def create_memory_manager(
+    config: Optional[Configuration] = None,
+    storage_type: Optional[str] = None,
+) -> MemoryManager:
+    """工厂函数：创建 MemoryManager实例"""
+    # 从环境变量读取存储类型，默认使用 chroma
+    if storage_type is None:
+        storage_type = os.environ.get("STORAGE_TYPE", "chroma")
+
+    return MemoryManager(config, storage_type=storage_type)

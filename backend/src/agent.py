@@ -13,18 +13,18 @@ from hello_agents import HelloAgentsLLM, ToolAwareSimpleAgent
 from hello_agents.tools import ToolRegistry
 from hello_agents.tools.builtin.note_tool import NoteTool
 
-from config import Configuration
-from prompts import (
+from .config import Configuration
+from .prompts import (
     report_writer_instructions,
     task_summarizer_instructions,
     todo_planner_system_prompt,
 )
-from models import SummaryState, SummaryStateOutput, TodoItem
-from services.planner import PlanningService
-from services.reporter import ReportingService
-from services.search import dispatch_search, prepare_research_context
-from services.summarizer import SummarizationService
-from services.tool_events import ToolCallTracker
+from .models import SummaryState, SummaryStateOutput, TodoItem
+from .services.planner import PlanningService
+from .services.reporter import ReportingService
+from .services.search import dispatch_search, prepare_research_context
+from .services.summarizer import SummarizationService
+from .services.tool_events import ToolCallTracker
 
 logger = logging.getLogger(__name__)
 
@@ -124,7 +124,7 @@ class DeepResearchAgent:
 
     def run(self, topic: str) -> SummaryStateOutput:
         """Execute the research workflow and return the final report."""
-        from memory.routes import get_memory_manager
+        from .memory.routes import get_memory_manager
         
         manager = None
         session = None
@@ -177,15 +177,18 @@ class DeepResearchAgent:
                 manager.add_memory(
                     session_id=session.id,
                     session_topic=topic,
-                    content=clean_rpt[:2000], # maybe store a truncated version or full report
-                    content_type="report"
+                    content=clean_rpt,  # 存储完整报告
+                    content_type="report",
+                    metadata={"full_report": True}
                 )
+                logger.info(f"Saved report to session {session.id}, content length: {len(clean_rpt)}")
                 manager.update_session(
-                    session_id=session.id, 
-                    status="completed", 
-                    summary=clean_rpt[:200] + '...', 
+                    session_id=session.id,
+                    status="completed",
+                    summary=clean_rpt[:500] + '...' if len(clean_rpt) > 500 else clean_rpt,
                     task_count=len(state.todo_items)
                 )
+                logger.info(f"Updated session {session.id} to completed")
             except Exception as e:
                  logger.warning(f"Failed to save report memory: {e}")
 
@@ -197,7 +200,7 @@ class DeepResearchAgent:
 
     def run_stream(self, topic: str) -> Iterator[dict[str, Any]]:
         """Execute the workflow yielding incremental progress events."""
-        from memory.routes import get_memory_manager
+        from .memory.routes import get_memory_manager
         
         manager = None
         session = None
@@ -359,13 +362,14 @@ class DeepResearchAgent:
                     manager.add_memory(
                         session_id=session.id,
                         session_topic=topic,
-                        content=clean_rpt[:2000],
-                        content_type="report"
+                        content=clean_rpt,  # 存储完整报告
+                        content_type="report",
+                        metadata={"full_report": True}
                     )
                     manager.update_session(
                         session_id=session.id, 
                         status="completed", 
-                        summary=clean_rpt[:200] + '...', 
+                        summary=clean_rpt[:500] + '...' if len(clean_rpt) > 500 else clean_rpt, 
                         task_count=len(state.todo_items)
                     )
             except Exception as e:
